@@ -5,75 +5,61 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>🎉 Party Galerie</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#111; color:#eee; margin:0; }
-/* Header-Inhalt mittig ausrichten */
-header { text-align: center;
-       background:#222;
-        padding:0px 16px;
-  position:sticky; top:0; z-index:10;              /* groß am Anfang */
-  transition: padding .25s ease, box-shadow .25s ease, backdrop-filter .25s ease;
-  backdrop-filter: none;
-       }              /* Text zentrieren */
-header .wrap{
-  max-width: 1100px;
-  margin: 0 auto;                           /* Container zentrieren */
-  display: flex;
-  flex-direction: column;
-  align-items: center;                      /* Inhalt horizontal mittig */
-  justify-content: center;                  /* Inhalt vertikal mittig */
-}
-    
-    h1{
-  margin:0;
-  font-size: clamp(22px, 5vw, 40px); /* groß am Anfang */
-  transition: font-size .25s ease, transform .25s ease;
-}
+    :root{--maxw:1100px}
+    body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto; background:#111; color:#eee; margin:0}
+    /* Header (zentriert + shrink) */
+    header{
+      background:#222;
+      position:sticky; top:0; z-index:10;
+      padding:24px 16px;                     /* groß am Anfang */
+      transition: padding .25s ease, box-shadow .25s ease, backdrop-filter .25s ease;
+      text-align:center;
+    }
+    header.shrink{                           /* kleiner bei Scroll */
+      padding:10px 16px;
+      box-shadow:0 6px 20px rgba(0,0,0,.35);
+      backdrop-filter:blur(2px);
+    }
+    header .wrap{
+      max-width:var(--maxw);
+      margin:0 auto;
+      display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center;
+    }
+    h1{margin:0; font-size:clamp(22px,5vw,40px); transition: font-size .25s ease}
+    header.shrink h1{font-size:clamp(16px,3vw,22px)}
+    .note{font-size:12px; opacity:.8}
 
-/* Buttons/Inputs im Header zentrieren (falls noch nicht so) */
-.controls{ 
-  display: flex; 
-  gap: 10px; 
-  flex-wrap: wrap; 
-  justify-content: center; 
-}
+    /* Controls */
+    .controls{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:6px 0}
+    select,input,button{padding:10px 12px; border-radius:8px; border:1px solid #444; background:#333; color:#fff}
+    button{cursor:pointer}
 
-    .wrap { max-width:1100px; margin:0 auto; padding:0 16px; }
-    .controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0; }
-    select, input, button { padding:10px 12px; border-radius:8px; border:1px solid #444; background:#333; color:#fff; }
-    button { cursor:pointer; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; margin:20px 0 80px; }
-    .card { background:#222; border-radius:10px; overflow:hidden; border:1px solid #2a2a2a; }
-    .thumb { width:100%; display:block; aspect-ratio:1/1; object-fit:cover; }
-    .meta { padding:8px; font-size:12px; display:flex; gap:10px; justify-content:space-between; align-items:center; }
-    .left, .right { display:flex; gap:8px; align-items:center; }
-    a { color:#4ec9b0; text-decoration:none; }
-    .danger { background:#3a1c1c; border-color:#5a2a2a; color:#ffb3b3; border-radius:8px; padding:8px 10px; }
-    .note { font-size:12px; opacity:.8; }
-    /* Mobile vs. Desktop für Download */
-    .dl { display:none; }
-    .mobile-note { display:inline; font-size:12px; opacity:.8; }
-    @media (hover:hover) and (pointer:fine) {
-      .dl { display:inline-flex; }
-      .mobile-note { display:none; }
+    /* Grid */
+    .wrap-main{max-width:var(--maxw); margin:0 auto; padding:0 16px}
+    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin:20px 0 80px}
+    .card{background:#222; border-radius:10px; overflow:hidden; border:1px solid #2a2a2a}
+    .thumb{width:100%; display:block; aspect-ratio:1/1; object-fit:cover}
+    .meta{padding:8px; font-size:12px; display:flex; gap:10px; justify-content:space-between; align-items:center}
+    .left,.right{display:flex; gap:8px; align-items:center}
+    a{color:#4ec9b0; text-decoration:none}
+    .danger{background:#3a1c1c; border-color:#5a2a2a; color:#ffb3b3; border-radius:8px; padding:8px 10px}
+
+    /* Mobile: Download-Button verstecken, Hinweis zeigen */
+    .dl{display:none}
+    .mobile-note{display:inline; font-size:12px; opacity:.8}
+    @media (hover:hover) and (pointer:fine){
+      .dl{display:inline-flex}
+      .mobile-note{display:none}
     }
   </style>
   <script type="module">
-
-    // Header beim Scrollen schrumpfen lassen
-    const headerEl = document.querySelector("header");
-    const SHRINK_AT = 40; // Pixel, ab wann geschrumpft wird
-    
-    window.addEventListener("scroll", () => {
-      const y = window.scrollY || document.documentElement.scrollTop;
-      headerEl.classList.toggle("shrink", y > SHRINK_AT);
-    }, { passive: true });
-    
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    // === Deine Supabase-Daten ===
-    const SUPABASE_URL  = "https://jwzzlztzvbawxmtwqllf.supabase.co";
+    // ==== Supabase-Konfiguration (ersetzen) ====
+    const SUPABASE_URL = "https://jwzzlztzvbawxmtwqllf.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3enpsenR6dmJhd3htdHdxbGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MjI1ODEsImV4cCI6MjA3NTE5ODU4MX0.Sy7qITsBxTZOogAGgZGlAbnWa5LlTtJppyd_R0Hvv94";
     const BUCKET = "photos";
+    // ===========================================
 
     // Kategorien (Ordner im Bucket)
     const CATEGORIES = [
@@ -86,51 +72,33 @@ header .wrap{
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    // ---- "Eigene Uploads" in localStorage merken ----
-    const LS_KEY = "my_uploads_v1"; // Liste aus Pfaden
-    function getMyUploads() {
-      try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || "[]")); }
-      catch { return new Set(); }
-    }
-    function addMyUpload(path) {
-      const set = getMyUploads(); set.add(path);
-      localStorage.setItem(LS_KEY, JSON.stringify([...set]));
-    }
-    function removeMyUpload(path) {
-      const set = getMyUploads(); set.delete(path);
-      localStorage.setItem(LS_KEY, JSON.stringify([...set]));
-    }
-    // --------------------------------------------------
+    // Eigene Uploads auf diesem Gerät merken (für Delete-Button im UI)
+    const LS_KEY = "my_uploads_v1";
+    const getMine = () => new Set(JSON.parse(localStorage.getItem(LS_KEY) || "[]"));
+    const addMine = (p) => { const s=getMine(); s.add(p); localStorage.setItem(LS_KEY, JSON.stringify([...s])); };
+    const delMine = (p) => { const s=getMine(); s.delete(p); localStorage.setItem(LS_KEY, JSON.stringify([...s])); };
 
     const sel = () => document.getElementById("category");
     const grid = () => document.getElementById("grid");
     const filesInput = () => document.getElementById("files");
     let currentPrefix = "";
 
-    // Public-URL (Anzeigen)
-    function viewUrl(fullPath) {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(fullPath);
-      return data.publicUrl;
-    }
-    // Download-URL (erzwingt Download in den meisten Browsern)
-    function downloadUrl(fullPath) {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(fullPath, { download: true });
-      return data.publicUrl;
-    }
+    // Public-URLs
+    const viewUrl = (fullPath) => supabase.storage.from(BUCKET).getPublicUrl(fullPath).data.publicUrl;
+    const downloadUrl = (fullPath) => supabase.storage.from(BUCKET).getPublicUrl(fullPath, { download: true }).data.publicUrl;
 
-    async function listImages(prefix="") {
+    // Liste rendern
+    async function listImages(prefix=""){
       currentPrefix = prefix;
-      const { data, error } = await supabase
-        .storage
-        .from(BUCKET)
-        .list(prefix, { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
+      const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
+        limit: 1000, sortBy: { column: "created_at", order: "desc" }
+      });
+      if (error){ console.error(error); grid().innerHTML = "<p>Fehler beim Laden.</p>"; return; }
 
-      if (error) { console.error(error); grid().innerHTML = "<p>Fehler beim Laden.</p>"; return; }
-
-      const mine = getMyUploads();
+      const mine = getMine();
       grid().innerHTML = "";
 
-      for (const f of data) {
+      for (const f of data){
         if (f.name.endsWith("/")) continue;
         const fullPath = `${prefix}${f.name}`;
         const vUrl = viewUrl(fullPath);
@@ -158,49 +126,49 @@ header .wrap{
         grid().appendChild(card);
       }
 
-      // Event Delegation für Löschen
+      // Delegated delete
       grid().onclick = async (e) => {
-        const btn = e.target.closest("[data-del]");
-        if (!btn) return;
+        const btn = e.target.closest("[data-del]"); if(!btn) return;
         const path = btn.getAttribute("data-del");
         if (!confirm("Wirklich löschen?")) return;
-
         const { error } = await supabase.storage.from(BUCKET).remove([path]);
-        if (error) { alert("Löschen fehlgeschlagen: " + error.message); return; }
-
-        removeMyUpload(path);
+        if (error){ alert("Löschen fehlgeschlagen: " + error.message); return; }
+        delMine(path);
         await listImages(currentPrefix);
       };
     }
 
-    async function uploadFiles() {
-      const files = filesInput().files;
-      if (!files.length) return;
+    // Upload
+    async function uploadFiles(){
+      const files = filesInput().files; if(!files.length) return;
       const cat = sel().value;
-
-      for (const file of files) {
-        const safeName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-        const path = `${cat}${safeName}`;
+      for (const file of files){
+        const safe = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+        const path = `${cat}${safe}`;
         const { error } = await supabase.storage.from(BUCKET).upload(path, file, { cacheControl:"3600", upsert:false });
-        if (error) { alert("Fehler: " + error.message); continue; }
-        addMyUpload(path); // merken: dieses Gerät hat die Datei hochgeladen
+        if (error){ alert("Fehler: " + error.message); continue; }
+        addMine(path);
       }
       filesInput().value = "";
       await listImages(cat);
     }
 
+    // Header-Shrink beim Scrollen
+    const headerEl = document.querySelector("header");
+    const SHRINK_AT = 40; // px
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY || document.documentElement.scrollTop;
+      headerEl.classList.toggle("shrink", y > SHRINK_AT);
+    }, { passive:true });
+
+    // Init
     window.addEventListener("DOMContentLoaded", async () => {
-      // Kategorien füllen
       CATEGORIES.forEach(c => {
         const opt = document.createElement("option");
-        opt.value = c.path;
-        opt.textContent = c.label;
-        sel().appendChild(opt);
+        opt.value = c.path; opt.textContent = c.label; sel().appendChild(opt);
       });
-
       sel().addEventListener("change", () => listImages(sel().value));
       document.getElementById("uploadBtn").addEventListener("click", uploadFiles);
-
       await listImages(CATEGORIES[0].path);
     });
   </script>
@@ -214,17 +182,12 @@ header .wrap{
         <input type="file" id="files" multiple accept="image/*,video/*" />
         <button id="uploadBtn">Hochladen</button>
       </div>
+      <p class="note">Hinweis: Löschen ohne Login nur für <b>eigene Uploads (dieses Gerät)</b>.</p>
+    </div>
   </header>
 
-  <main class="wrap">
+  <main class="wrap-main">
     <div id="grid" class="grid"></div>
   </main>
 </body>
 </html>
-
-
-
-
-
-
-
