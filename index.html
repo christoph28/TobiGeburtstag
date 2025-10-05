@@ -39,23 +39,49 @@
     const grid = () => document.getElementById("grid");
     const filesInput = () => document.getElementById("files");
 
-    async function listImages(prefix="") {
-      const { data, error } = await supabase.storage.from(BUCKET).list(prefix, { limit:100, sortBy:{column:"created_at", order:"desc"} });
-      if (error) { console.error(error); return; }
-      const pub = (path) => `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(prefix+path)}`;
-      grid().innerHTML = "";
-      for (const f of data) {
-        if (f.name.endsWith("/")) continue;
-        const url = pub(f.name);
-        const isVid = f.name.endsWith(".mp4") || f.name.endsWith(".webm") || f.name.endsWith(".mov");
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = isVid 
-          ? `<video src="${url}" controls></video><div class="meta"><a href="${url}" download>⬇ Download</a></div>`
-          : `<img src="${url}" /><div class="meta"><a href="${url}" download>⬇ Download</a></div>`;
-        grid().appendChild(card);
-      }
+  async function listImages(prefix="") {
+    const { data, error } = await supabase
+      .storage
+      .from(BUCKET)
+      .list(prefix, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+  
+    if (error) { console.error(error); return; }
+  
+    grid().innerHTML = "";
+  
+    for (const f of data) {
+      if (f.name.endsWith("/")) continue;
+  
+      const fullPath = `${prefix}${f.name}`;
+  
+      // normale View-URL (für <img>/<video>)
+      const { data: viewData } = supabase
+        .storage
+        .from(BUCKET)
+        .getPublicUrl(fullPath);
+  
+      // Download-URL mit Content-Disposition: attachment
+      const { data: downData } = supabase
+        .storage
+        .from(BUCKET)
+        .getPublicUrl(fullPath, { download: true });
+  
+      const viewUrl = viewData.publicUrl;
+      const downUrl = downData.publicUrl;
+  
+      const isVid = f.name.match(/\.(mp4|webm|mov)$/i);
+  
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = isVid
+        ? `<video src="${viewUrl}" controls></video>
+           <div class="meta"><a href="${downUrl}" target="_blank" rel="noopener">⬇ Download</a></div>`
+        : `<img src="${viewUrl}" alt="${f.name}" />
+           <div class="meta"><a href="${downUrl}" target="_blank" rel="noopener">⬇ Download</a></div>`;
+  
+      grid().appendChild(card);
     }
+  }
 
     async function uploadFiles() {
       const files = filesInput().files;
@@ -97,3 +123,4 @@
 </body>
 
 </html>
+
