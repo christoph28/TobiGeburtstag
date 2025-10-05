@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🎉 Party Galerie</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; margin:0; }
+    header { background:#222; padding:20px; text-align:center; }
+    h1 { margin:0; }
+    .controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:20px 0; }
+    select, input, button { padding:10px; border-radius:6px; border:1px solid #444; background:#333; color:#fff; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; margin:20px; }
+    .card { background:#222; border-radius:8px; overflow:hidden; }
+    .card img, .card video { width:100%; display:block; }
+    .meta { padding:6px; font-size:12px; display:flex; justify-content:space-between; }
+    a { color:#4ec9b0; text-decoration:none; }
+  </style>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // Deine Supabase-Daten hier eintragen
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON = "YOUR_SUPABASE_ANON_KEY";
+    const BUCKET = "photos";
+
+    // Kategorien = Ordner im Bucket
+    const CATEGORIES = [
+      { label: "📸 Allgemein", path: "allgemein/" },
+      { label: "🧔 Längster Bart", path: "laengster-bart/" },
+      { label: "💃 Beste Tanzmoves", path: "tanzmoves/" },
+      { label: "😂 Lustigstes Outfit", path: "outfits/" },
+      { label: "🍹 Cocktail-Momente", path: "cocktails/" }
+    ];
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const sel = () => document.getElementById("category");
+    const grid = () => document.getElementById("grid");
+    const filesInput = () => document.getElementById("files");
+
+    async function listImages(prefix="") {
+      const { data, error } = await supabase.storage.from(BUCKET).list(prefix, { limit:100, sortBy:{column:"created_at", order:"desc"} });
+      if (error) { console.error(error); return; }
+      const pub = (path) => `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(prefix+path)}`;
+      grid().innerHTML = "";
+      for (const f of data) {
+        if (f.name.endsWith("/")) continue;
+        const url = pub(f.name);
+        const isVid = f.name.endsWith(".mp4") || f.name.endsWith(".webm") || f.name.endsWith(".mov");
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = isVid 
+          ? `<video src="${url}" controls></video><div class="meta"><a href="${url}" download>⬇ Download</a></div>`
+          : `<img src="${url}" /><div class="meta"><a href="${url}" download>⬇ Download</a></div>`;
+        grid().appendChild(card);
+      }
+    }
+
+    async function uploadFiles() {
+      const files = filesInput().files;
+      if (!files.length) return;
+      const cat = sel().value;
+      for (const file of files) {
+        const safeName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+        const path = `${cat}${safeName}`;
+        const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+        if (error) alert("Fehler: " + error.message);
+      }
+      await listImages(cat);
+      filesInput().value = "";
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      CATEGORIES.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.path;
+        opt.textContent = c.label;
+        sel().appendChild(opt);
+      });
+      sel().addEventListener("change", () => listImages(sel().value));
+      document.getElementById("uploadBtn").addEventListener("click", uploadFiles);
+      await listImages(CATEGORIES[0].path);
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>🎉 Party Galerie – Lade deine Fotos hoch!</h1>
+  </header>
+  <div class="controls">
+    <select id="category"></select>
+    <input type="file" id="files" multiple accept="image/*,video/*" />
+    <button id="uploadBtn">Hochladen</button>
+  </div>
+  <div id="grid" class="grid"></div>
+</body>
+</html>
