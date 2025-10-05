@@ -6,8 +6,29 @@
   <title>🎉 Party Galerie</title>
   <style>
     body { font-family: Arial, sans-serif; background:#111; color:#eee; margin:0; }
-    header { background:#222; padding:16px; position:sticky; top:0; z-index:10; }
-    h1 { margin:0; text-align:center; }
+    header{
+  background:#222;
+  position:sticky; top:0; z-index:10;
+  padding:24px 16px;                 /* groß am Anfang */
+  transition: padding .25s ease, box-shadow .25s ease, backdrop-filter .25s ease;
+  backdrop-filter: none;
+}
+h1{
+  margin:0;
+  font-size: clamp(22px, 5vw, 40px); /* groß am Anfang */
+  transition: font-size .25s ease, transform .25s ease;
+}
+
+/* Zustand beim Scrollen: kleiner Header */
+header.shrink{
+  padding:10px 16px;                 /* weniger Höhe */
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  backdrop-filter: blur(2px);
+}
+header.shrink h1{
+  font-size: clamp(16px, 3vw, 22px); /* kleinerer Titel */
+}
+
     .wrap { max-width:1100px; margin:0 auto; padding:0 16px; }
     .controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0; }
     select, input, button { padding:10px 12px; border-radius:8px; border:1px solid #444; background:#333; color:#fff; }
@@ -29,6 +50,16 @@
     }
   </style>
   <script type="module">
+
+    // Header beim Scrollen schrumpfen lassen
+    const headerEl = document.querySelector("header");
+    const SHRINK_AT = 40; // Pixel, ab wann geschrumpft wird
+    
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY || document.documentElement.scrollTop;
+      headerEl.classList.toggle("shrink", y > SHRINK_AT);
+    }, { passive: true });
+    
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
     // === Deine Supabase-Daten ===
@@ -182,4 +213,5 @@
   </main>
 </body>
 </html>
+
 
